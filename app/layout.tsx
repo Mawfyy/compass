@@ -1,17 +1,32 @@
 import type { Metadata } from "next";
+import { Instrument_Serif, Inter } from "next/font/google";
 import "./globals.css";
 import "@xyflow/react/dist/style.css";
 
+const serif = Instrument_Serif({
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+});
+
+const sans = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "StudyGraph — Learning Map Generator",
-  description: "Tell me what you want to learn, and I'll build a visual map of the knowledge you need.",
+  title: "Compass — Learning Guide Generator",
+  description: "Tell me what you want to learn, and I'll build a clear study guide — or a visual learning map.",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${serif.variable} ${sans.variable}`}>
       <body>{children}</body>
     </html>
   );

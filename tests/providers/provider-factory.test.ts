@@ -2,10 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   createDecisionProvider,
   createMapGenerator,
+  createGuideGenerator,
 } from "../../src/providers/provider-factory";
 import { MockProvider } from "../../src/providers/mock/mock-provider";
 import { JevProvider } from "../../src/providers/jev/jev-provider";
 import { OpenRouterMapGenerator } from "../../src/providers/openrouter/openrouter-map-generator";
+import { OpenRouterGuideGenerator } from "../../src/providers/openrouter/openrouter-guide-generator";
 import type { Config } from "../../src/infrastructure/config";
 
 function config(overrides: Partial<Config>): Config {
@@ -18,6 +20,7 @@ function config(overrides: Partial<Config>): Config {
     openrouterModel: "deepseek/deepseek-v4-flash-0731",
     openrouterBaseUrl: "https://openrouter.ai/api/v1",
     openrouterTimeoutMs: 120_000,
+    guideModel: "google/gemini-3.8-flash",
     ...overrides,
   };
 }
@@ -40,6 +43,20 @@ describe("createDecisionProvider", () => {
       /TYPESAFE_API_KEY/,
     );
   });
+
+  it("returns a JevProvider when PROVIDER=openrouter and a TypeSafe key is set", () => {
+    expect(
+      createDecisionProvider(
+        config({ provider: "openrouter", typesafeApiKey: "key" }),
+      ),
+    ).toBeInstanceOf(JevProvider);
+  });
+
+  it("returns a MockProvider when PROVIDER=openrouter without a TypeSafe key", () => {
+    expect(
+      createDecisionProvider(config({ provider: "openrouter" })),
+    ).toBeInstanceOf(MockProvider);
+  });
 });
 
 describe("createMapGenerator", () => {
@@ -56,6 +73,25 @@ describe("createMapGenerator", () => {
 
   it("throws when PROVIDER=openrouter without an API key", () => {
     expect(() => createMapGenerator(config({ provider: "openrouter" }))).toThrow(
+      /OPENROUTER_API_KEY/,
+    );
+  });
+});
+
+describe("createGuideGenerator", () => {
+  it("returns undefined for non-openrouter providers", () => {
+    expect(createGuideGenerator(config({ provider: "mock" }))).toBeUndefined();
+    expect(createGuideGenerator(config({ provider: "jev" }))).toBeUndefined();
+  });
+
+  it("returns an OpenRouterGuideGenerator when PROVIDER=openrouter and a key is set", () => {
+    expect(
+      createGuideGenerator(config({ provider: "openrouter", openrouterApiKey: "key" })),
+    ).toBeInstanceOf(OpenRouterGuideGenerator);
+  });
+
+  it("throws when PROVIDER=openrouter without an API key", () => {
+    expect(() => createGuideGenerator(config({ provider: "openrouter" }))).toThrow(
       /OPENROUTER_API_KEY/,
     );
   });

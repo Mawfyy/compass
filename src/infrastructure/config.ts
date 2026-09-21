@@ -9,6 +9,7 @@ export interface Config {
   openrouterModel: string;
   openrouterBaseUrl: string;
   openrouterTimeoutMs: number;
+  guideModel: string;
 }
 
 function readInt(value: string | undefined, fallback: number, name: string): number {
@@ -46,5 +47,6 @@ export function loadConfig(): Config {
       120_000,
       "OPENROUTER_TIMEOUT_MS",
     ),
+    guideModel: process.env.OPENROUTER_GUIDE_MODEL ?? process.env.OPENROUTER_MODEL ?? "google/gemini-3.8-flash",
   };
 }

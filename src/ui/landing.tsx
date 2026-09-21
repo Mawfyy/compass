@@ -1,102 +1,123 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { loadHistory, type HistoryEntry } from "./guide/history";
 
 const EXAMPLES = [
+  "Mastering Python for Data Science",
   "I want to become an ML engineer. I know Python but my math is weak.",
   "I want to learn distributed systems from fundamentals.",
   "I want to learn Rust and systems programming.",
-  "I want to learn cybersecurity from scratch.",
-  "I want to learn computer graphics.",
+  "Building a mobile app",
 ];
 
 export function Landing() {
   const router = useRouter();
   const [goal, setGoal] = useState("");
+  const [recent, setRecent] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    setRecent(loadHistory());
+  }, []);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const params = new URLSearchParams();
     const text = data.get("goal")?.toString().trim() ?? "";
-    if (text) params.set("goal", text);
-    params.set("level", data.get("level")?.toString() ?? "beginner");
-    params.set("goalKind", data.get("goalKind")?.toString() ?? "career");
-    params.set("depth", data.get("depth")?.toString() ?? "balanced");
-    params.set("hours", data.get("hours")?.toString() ?? "10");
-    router.push(`/map?${params.toString()}`);
+    if (!text) return;
+    router.push(`/guide?goal=${encodeURIComponent(text)}`);
+  };
+
+  const openRecent = (entry: HistoryEntry) => {
+    router.push(`/guide?goal=${encodeURIComponent(entry.goal)}`);
   };
 
   return (
-    <div className="landing">
-      <h1>StudyGraph</h1>
-      <p className="subtitle">
-        Tell me what you want to learn, and I&apos;ll build you a visual map of
-        the knowledge you need — in the order you should learn it, with
-        resources and projects at every step.
-      </p>
-      <form className="prompt-card" onSubmit={submit}>
-        <textarea
-          name="goal"
-          value={goal}
-          onChange={(event) => setGoal(event.target.value)}
-          placeholder="What do you want to learn?"
-          autoFocus
-        />
-        <div className="chips">
-          {EXAMPLES.map((example) => (
-            <button
-              type="button"
-              key={example}
-              className="chip"
-              onClick={() => setGoal(example)}
-            >
-              {example}
-            </button>
-          ))}
+    <div className="lw-root">
+      <div className="lw-texture" aria-hidden="true" />
+
+      <header className="lw-nav">
+        <div className="lw-brand">
+          <span className="lw-brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M15.5 8.5l-2 5-5 2 2-5 5-2z" />
+            </svg>
+          </span>
+          <span className="lw-brand-name">Compass</span>
         </div>
-        <div className="structured">
-          <div className="field">
-            <label>Current level</label>
-            <select name="level" defaultValue="beginner">
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
-            </select>
-          </div>
-          <div className="field">
-            <label>Goal</label>
-            <select name="goalKind" defaultValue="career">
-              <option value="career">Career</option>
-              <option value="academic">Academic</option>
-              <option value="hobby">Hobby</option>
-              <option value="project">Project</option>
-              <option value="deep-understanding">Deep Understanding</option>
-            </select>
-          </div>
-          <div className="field">
-            <label>Depth</label>
-            <select name="depth" defaultValue="balanced">
-              <option value="practical">Practical</option>
-              <option value="balanced">Balanced</option>
-              <option value="deep">Deep</option>
-            </select>
-          </div>
-          <div className="field">
-            <label>Hours per week</label>
-            <select name="hours" defaultValue="10">
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="20">20+</option>
-            </select>
-          </div>
-        </div>
-        <button type="submit" className="primary-btn">
-          Generate my learning map
-        </button>
-      </form>
+        <nav className="lw-nav-links">
+          <Link href="/why">Why Compass</Link>
+          <Link href="/how">How it works</Link>
+        </nav>
+        <a href="/guide" className="lw-login">Log In</a>
+      </header>
+
+      <main className="lw-main">
+        <section className="lw-hero">
+          <h1 className="lw-headline">
+            A personalized <em>Learning Path</em>
+            <br />
+            and your definitive <em>Study Guide</em>
+          </h1>
+          <p className="lw-subtitle">
+            Describe your destination, and let Compass map your journey to knowledge.
+          </p>
+
+          <form className="lw-card" onSubmit={submit}>
+            <div className="lw-input-row">
+              <input
+                type="text"
+                name="goal"
+                value={goal}
+                onChange={(event) => setGoal(event.target.value)}
+                placeholder='e.g., "Mastering Python for Data Science"'
+                autoFocus
+              />
+              <button type="submit" className="lw-cta">
+                Map My Goal
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+
+            <div className="lw-chips">
+              {EXAMPLES.map((example) => (
+                <button
+                  type="button"
+                  key={example}
+                  className="lw-chip"
+                  onClick={() => setGoal(example)}
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </form>
+        </section>
+
+        {recent.length > 0 && (
+          <aside className="lw-recent">
+            <span className="lw-recent-head">Recent guides</span>
+            <ul className="lw-recent-list">
+              {recent.map((entry) => (
+                <li key={entry.createdAt}>
+                  <button type="button" onClick={() => openRecent(entry)}>
+                    <span className="lw-recent-goal">{entry.goal}</span>
+                    <span className="lw-recent-arrow" aria-hidden="true">→</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+      </main>
+
+      <footer className="lw-footer">
+        <span>Compass — build clarity into what you learn</span>
+        <span className="lw-footer-muted">Powered by AI</span>
+      </footer>
     </div>
   );
 }

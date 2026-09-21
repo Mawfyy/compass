@@ -1,6 +1,12 @@
-# StudyGraph
+# Compass
 
-Interactive learning map generator. Describe what you want to learn, get a visual graph of topics, prerequisites, resources, and projects — in the order you should learn them.
+Turn any learning goal into a personalized **Study Guide** or an interactive **Learning Path** map.
+
+Describe your destination, and Compass maps your journey to knowledge — a clear, ordered plan with the right topics, resources, and projects at each step.
+
+- **Guide-first** — a written, structured study guide you can check off phase by phase.
+- **Optional map** — convert any guide into an interactive visual graph of topics, prerequisites, and projects.
+- **Personalized by default** — an AI goal profile classifies your level, goal type, depth, and domain, then folds it into generation.
 
 ## Quick Start
 
@@ -11,21 +17,37 @@ cp .env.example .env
 pnpm dev
 ```
 
-Open http://localhost:8080, type a learning goal, and generate your map.
+Open `http://localhost:3000`, type a learning goal, and generate your guide.
+
+## How It Works
+
+1. **Describe your goal** — tell Compass what you want to learn and where you're starting.
+2. **Get your guide** — Compass writes a personalized, ordered study plan (phases, topics, labeled resources).
+3. **Learn in order** — check off phases, track your progress, and open it as a map anytime.
+
+## Pages
+
+| Route | Purpose |
+|-------|---------|
+| `/` | Landing — single input, warm editorial aesthetic |
+| `/guide` | Study guide (text) — the primary experience |
+| `/map` | Interactive learning map (React Flow graph) |
+| `/why` | Why Compass (feature overview) |
+| `/how` | How it works |
 
 ## Provider Modes
 
-Set `PROVIDER` in `.env` to choose how maps are generated:
+Set `PROVIDER` in `.env` to choose how guides are generated:
 
 | Mode | `PROVIDER` | What it does | Cost |
 |------|-----------|--------------|------|
-| **OpenRouter** | `openrouter` | Generates a full map via an LLM (best quality) | ~$0.001/map |
+| **OpenRouter** | `openrouter` | Generates a full guide via an LLM (best quality) | ~$0.001/guide |
 | **Jev** | `jev` | Routes to curated templates via TypeSafe AI judgments | Free tier available |
 | **Mock** | `mock` | Deterministic keyword matching + generic scaffold | Free |
 
 ### OpenRouter (recommended)
 
-Uses a generative LLM to produce a complete, specific learning map tailored to your goal.
+Uses a generative LLM to produce a complete, specific study guide tailored to your goal.
 
 ```env
 PROVIDER=openrouter
@@ -33,9 +55,7 @@ OPENROUTER_API_KEY=sk-or-...
 OPENROUTER_MODEL=google/gemini-3.8-flash  # default, fast + structured outputs
 ```
 
-Other model options:
-- `deepseek/deepseek-v4-flash-0731` — slower, higher quality
-- `openai/gpt-4.1-nano` — very fast, good structured output
+The guide model is configurable via `OPENROUTER_GUIDE_MODEL` (defaults to `OPENROUTER_MODEL`).
 
 ### Jev (TypeSafe AI)
 
@@ -54,35 +74,44 @@ No API key needed. Matches your goal against keyword lists, falls back to a gene
 PROVIDER=mock
 ```
 
+### Goal Profiling
+
+When `TYPESAFE_API_KEY` is set alongside `PROVIDER=openrouter`, Jev classifies each goal across six dimensions — `level`, `kind`, `depth`, `domain`, `handsOn`, and whether a `timeline` is implied. Those signals tailor the guide (starting point, phase ordering, and resource mix). Without a key — or if the Jev call fails — Compass falls back to sensible defaults.
+
 ## Architecture
 
 ```
 app/
   page.tsx                 # Landing page
+  guide/page.tsx           # Study guide (text) view
   map/page.tsx             # Map view (reads search params)
+  why/page.tsx             # Why Compass
+  how/page.tsx             # How it works
+  api/guide/route.ts       # POST endpoint — generates guides
   api/map/route.ts         # POST endpoint — generates maps
 src/
-  domain/map/              # Core types: LearningMap, MapNode, enums, Zod schemas
+  domain/guide/            # StudyGuide type + Zod schema
+  domain/map/              # LearningMap, MapNode, enums, Zod schemas
+  application/guide/       # Goal profiling (Jev classification)
   application/map/         # GenerateMapService, templates, scaffold, Jev routing
-  providers/               # DecisionProvider (Jev) + MapGenerator (OpenRouter)
+  providers/               # DecisionProvider (Jev) + GuideGenerator/MapGenerator (OpenRouter)
     mock/                  # Deterministic keyword + scaffold
     jev/                   # TypeSafe AI judgments
     openrouter/            # Generative LLM via OpenRouter API
   infrastructure/          # Config loader
-  ui/                      # React components (landing, React Flow canvas, drawer)
+  ui/                      # React components (landing, guide, map, drawer)
 tests/                     # Vitest unit tests
 ```
 
-### Data Flow
+### Guide Output
 
-1. User submits a goal on the landing page
-2. `POST /api/map` receives the request, validates with Zod
-3. `GenerateMapService` delegates to the active provider:
-   - **OpenRouter**: sends a structured prompt to the LLM, validates the response against `mapNodeSchema`, normalizes any invalid node types, falls back to scaffold on failure
-   - **Jev**: translates the goal into judgment primitives (noul/score/choice), routes to the best template
-   - **Mock**: keyword matching against curated templates, falls back to generic scaffold
-4. Returns a `LearningMap` with a hierarchical node tree
-5. Frontend renders it as an interactive React Flow graph
+A study guide is a validated, structured JSON object:
+
+```
+{ intro, prerequisites?, phases, milestones }
+```
+
+Each phase has a `title`, `duration`, and markdown `body` with labeled activity types: `[Course]`, `[Reading]`, `[Exercise]`, `[Case Study]`, `[Certification]`. Progress is persisted in `localStorage` under `compass:guide-done:<goal>`, and recent guides are stored in `compass:guide-history`.
 
 ## Node Types
 
@@ -110,7 +139,7 @@ Node types are defined once in `src/domain/map/enums.ts` (`MAP_NODE_TYPES`); val
 ## Commands
 
 ```bash
-pnpm dev          # Start dev server on :8080
+pnpm dev          # Start dev server on :3000
 pnpm build        # Production build
 pnpm test         # Run tests (vitest)
 pnpm test:watch   # Watch mode
@@ -122,6 +151,8 @@ pnpm typecheck    # Type-check without emitting
 - **Next.js 16** (App Router, Turbopack)
 - **React 19** + **@xyflow/react 12** (interactive graph)
 - **Zod** (request/response validation)
+- **react-markdown + remark-gfm + rehype-sanitize** (guide rendering)
+- **Instrument Serif + Inter** (editorial typography)
 - **TypeSafe AI** (`@typesafe-ai/sdk` — optional, for Jev mode)
 - **Vitest** (tests)
 
@@ -134,6 +165,8 @@ See `.env.example` for the full list. Key variables:
 | `PROVIDER` | No | `mock` | `mock`, `jev`, or `openrouter` |
 | `OPENROUTER_API_KEY` | If `openrouter` | — | OpenRouter API key |
 | `OPENROUTER_MODEL` | No | `google/gemini-3.8-flash` | Model to use |
-| `TYPESAFE_API_KEY` | If `jev` | — | TypeSafe AI API key |
-| `PROVIDER_TIMEOUT_MS` | No | `10000` | Timeout for Jev judgments (ms) |
-| `OPENROUTER_TIMEOUT_MS` | No | `60000` | Timeout for map generation (ms) |
+| `OPENROUTER_GUIDE_MODEL` | No | `OPENROUTER_MODEL` fallback | Model for study guides |
+| `TYPESAFE_API_KEY` | No | — | TypeSafe AI key; enables goal profiling alongside OpenRouter |
+| `TYPESAFE_MODEL` | No | `jev-latest` | TypeSafe AI model |
+| `OPENROUTER_BASE_URL` | No | `https://openrouter.ai/api/v1` | OpenRouter endpoint |
+| `OPENROUTER_TIMEOUT_MS` | No | `60000` | Timeout for generation (ms) |

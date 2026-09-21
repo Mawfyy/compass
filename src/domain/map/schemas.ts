@@ -71,3 +71,9 @@ export const generateMapRequestSchema = z.object({
 });
 
 export type GenerateMapRequest = z.infer<typeof generateMapRequestSchema>;
+
+export const guideRequestSchema = z.object({
+  goal: z.string().trim().min(3, "Describe what you want a guide for"),
+});
+
+export type GuideRequest = z.infer<typeof guideRequestSchema>;
