@@ -1,4 +1,5 @@
 import type { MapNode } from "../../domain/map/node";
+import type { MapNodeType } from "../../domain/map/enums";
 
 export interface MapTemplate {
   id: string;
@@ -9,6 +10,12 @@ export interface MapTemplate {
 const subtopic = (id: string, title: string): MapNode => ({
   id,
   type: "subtopic",
+  title,
+});
+
+const leaf = (type: MapNodeType, id: string, title: string): MapNode => ({
+  id,
+  type,
   title,
 });
 
@@ -222,6 +229,8 @@ export const ML_ENGINEER_MAP: MapNode = {
             subtopic("classification", "Classification"),
             subtopic("clustering", "Clustering"),
             subtopic("model-evaluation", "Model Evaluation"),
+            leaf("course", "andrew-ng-ml", "Machine Learning Specialization"),
+            leaf("exercise", "ml-drills", "Supervised Learning Drills"),
           ],
         },
         {
@@ -256,6 +265,8 @@ export const ML_ENGINEER_MAP: MapNode = {
             subtopic("cnn", "CNN"),
             subtopic("rnn", "RNN"),
             subtopic("transformers", "Transformers"),
+            leaf("reading", "goodfellow-dl", "Deep Learning (Goodfellow)"),
+            leaf("exercise", "backprop-from-scratch", "Implement Backprop from Scratch"),
           ],
         },
         {
@@ -277,7 +288,16 @@ export const ML_ENGINEER_MAP: MapNode = {
             subtopic("deployment", "Deployment"),
             subtopic("data-pipelines", "Data Pipelines"),
             subtopic("monitoring", "Monitoring"),
+            leaf("case-study", "real-world-ml", "Real-world ML Failure Case Study"),
           ],
+        },
+        {
+          id: "aws-ml-specialty",
+          type: "certification",
+          title: "AWS Certified Machine Learning — Specialty",
+          difficulty: "Advanced",
+          purpose: "A vendor credential that validates applied ML and MLOps knowledge.",
+          prerequisites: ["ml-fundamentals"],
         },
       ],
     },

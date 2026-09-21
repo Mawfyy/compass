@@ -8,6 +8,11 @@ export const MAP_NODE_TYPES = [
   "tool",
   "project",
   "milestone",
+  "course",
+  "reading",
+  "exercise",
+  "case-study",
+  "certification",
 ] as const;
 export type MapNodeType = (typeof MAP_NODE_TYPES)[number];
 

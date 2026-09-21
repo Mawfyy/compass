@@ -31,6 +31,14 @@ Structure:
 - Each topic: 2-3 leaf children (subtopic/skill/concept/tool)
 - 1 "project" node under the goal (concrete task, not vague)
 
+Leaf node "type" should match what the learner actually does:
+- "course" = a formal, structured course to complete
+- "reading" = a specific book, paper, or text to study
+- "exercise" = hands-on drills, practice problems, or katas
+- "case-study" = a real-world example to analyze
+- "certification" = an exam or credential worth earning
+- "skill"/"concept"/"tool"/"subtopic" = a unit of knowledge or capability
+
 Every node has: id (kebab-case, unique), type, title, purpose (1 sentence), difficulty (Beginner/Intermediate/Advanced).
 
 On "topic" nodes, include a "resources" array with 1-2 real, named sources (a specific course, book, tutorial, or docs). Each resource has: title (real name), type ("book"/"course"/"video"/"tutorial"/"documentation"/"paper"/"exercise"/"lecture"/"project"), and why (one line on how it helps). Never invent URLs.

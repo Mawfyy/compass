@@ -113,4 +113,9 @@ export const NODE_TYPE_COLORS: Record<MapNodeType, string> = {
   tool: "#6c7a93",
   project: "#ff7a45",
   milestone: "#34c77b",
+  course: "#5b8def",
+  reading: "#b481ff",
+  exercise: "#35c9a1",
+  "case-study": "#e07a9b",
+  certification: "#e8b33b",
 };
