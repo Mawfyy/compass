@@ -1,10 +1,8 @@
-export type ProviderName = "jev" | "openrouter" | "mock";
+export type ProviderName = "openrouter" | "mock";
 
 export interface Config {
   provider: ProviderName;
   providerTimeoutMs: number;
-  typesafeApiKey: string | null;
-  typesafeModel: string;
   openrouterApiKey: string | null;
   openrouterBaseUrl: string;
   openrouterTimeoutMs: number;
@@ -19,10 +17,10 @@ function readInt(value: string | undefined, fallback: number, name: string): num
 }
 
 function readProvider(value: string | undefined): ProviderName {
-  if (value === "jev" || value === "openrouter" || value === "mock") return value;
+  if (value === "openrouter" || value === "mock") return value;
   if (value === undefined) return "mock";
   throw new Error(
-    `Config PROVIDER must be "jev", "openrouter", or "mock", received "${value}"`,
+    `Config PROVIDER must be "openrouter" or "mock", received "${value}"`,
   );
 }
 
@@ -36,8 +34,6 @@ export function loadConfig(): Config {
   return {
     provider: readProvider(process.env.PROVIDER),
     providerTimeoutMs: readInt(process.env.PROVIDER_TIMEOUT_MS, 10_000, "PROVIDER_TIMEOUT_MS"),
-    typesafeApiKey: process.env.TYPESAFE_API_KEY ?? null,
-    typesafeModel: process.env.TYPESAFE_MODEL ?? "jev-latest",
     openrouterApiKey: process.env.OPENROUTER_API_KEY ?? null,
     openrouterBaseUrl: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
     openrouterTimeoutMs: readInt(

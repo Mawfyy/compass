@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  createDecisionProvider,
-  createGuideGenerator,
-} from "../../src/providers/provider-factory";
-import { MockProvider } from "../../src/providers/mock/mock-provider";
-import { JevProvider } from "../../src/providers/jev/jev-provider";
+import { createGuideGenerator } from "../../src/providers/provider-factory";
 import { OpenRouterGuideGenerator } from "../../src/providers/openrouter/openrouter-guide-generator";
 import type { Config } from "../../src/infrastructure/config";
 
@@ -12,8 +7,6 @@ function config(overrides: Partial<Config>): Config {
   return {
     provider: "mock",
     providerTimeoutMs: 10_000,
-    typesafeApiKey: null,
-    typesafeModel: "jev-latest",
     openrouterApiKey: null,
     openrouterBaseUrl: "https://openrouter.ai/api/v1",
     openrouterTimeoutMs: 120_000,
@@ -22,44 +15,9 @@ function config(overrides: Partial<Config>): Config {
   };
 }
 
-describe("createDecisionProvider", () => {
-  it("returns a MockProvider when PROVIDER=mock", () => {
-    expect(createDecisionProvider(config({ provider: "mock" }))).toBeInstanceOf(
-      MockProvider,
-    );
-  });
-
-  it("returns a JevProvider when PROVIDER=jev and a key is set", () => {
-    expect(
-      createDecisionProvider(config({ provider: "jev", typesafeApiKey: "key" })),
-    ).toBeInstanceOf(JevProvider);
-  });
-
-  it("throws when PROVIDER=jev without an API key", () => {
-    expect(() => createDecisionProvider(config({ provider: "jev" }))).toThrow(
-      /TYPESAFE_API_KEY/,
-    );
-  });
-
-  it("returns a JevProvider when PROVIDER=openrouter and a TypeSafe key is set", () => {
-    expect(
-      createDecisionProvider(
-        config({ provider: "openrouter", typesafeApiKey: "key" }),
-      ),
-    ).toBeInstanceOf(JevProvider);
-  });
-
-  it("returns a MockProvider when PROVIDER=openrouter without a TypeSafe key", () => {
-    expect(
-      createDecisionProvider(config({ provider: "openrouter" })),
-    ).toBeInstanceOf(MockProvider);
-  });
-});
-
 describe("createGuideGenerator", () => {
   it("returns undefined for non-openrouter providers", () => {
     expect(createGuideGenerator(config({ provider: "mock" }))).toBeUndefined();
-    expect(createGuideGenerator(config({ provider: "jev" }))).toBeUndefined();
   });
 
   it("returns an OpenRouterGuideGenerator when PROVIDER=openrouter and a key is set", () => {

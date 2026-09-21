@@ -108,7 +108,6 @@ describe("OpenRouterGuideGenerator", () => {
       domain: "ML Engineer",
       handsOn: "high",
       hasTimeline: true,
-      source: "jev",
     };
     await generator.generate("guide to ML engineering", profile);
 

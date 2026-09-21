@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { guideRequestSchema } from "@/domain/guide/schemas";
-import {
-  createDecisionProvider,
-  createGuideGenerator,
-} from "@/providers/provider-factory";
+import { createGuideGenerator } from "@/providers/provider-factory";
 import type { StudyGuide } from "@/domain/guide/schemas";
 import { profileGoal } from "@/application/guide/goal-profile";
 
@@ -58,8 +55,7 @@ export async function POST(request: Request) {
   try {
     const generator = createGuideGenerator();
     if (generator) {
-      const provider = createDecisionProvider();
-      const profile = await profileGoal(provider, parsed.data.goal);
+      const profile = profileGoal(parsed.data.goal);
       const guide = await generator.generate(parsed.data.goal, profile);
       return NextResponse.json({ guide });
     }
