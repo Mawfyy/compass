@@ -14,5 +14,10 @@ export const guideSchema = z.object({
   milestones: z.string(),
 });
 
+export const guideRequestSchema = z.object({
+  goal: z.string().trim().min(3, "Describe what you want a guide for"),
+});
+
 export type GuidePhase = z.infer<typeof guidePhaseSchema>;
 export type StudyGuide = z.infer<typeof guideSchema>;
+export type GuideRequest = z.infer<typeof guideRequestSchema>;

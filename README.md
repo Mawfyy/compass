@@ -1,11 +1,10 @@
 # Compass
 
-Turn any learning goal into a personalized **Study Guide** or an interactive **Learning Path** map.
+Turn any learning goal into a personalized **Study Guide**.
 
-Describe your destination, and Compass maps your journey to knowledge — a clear, ordered plan with the right topics, resources, and projects at each step.
+Describe your destination, and Compass writes a clear, ordered plan with the right topics, resources, and projects at each step.
 
 - **Guide-first** — a written, structured study guide you can check off phase by phase.
-- **Optional map** — convert any guide into an interactive visual graph of topics, prerequisites, and projects.
 - **Personalized by default** — an AI goal profile classifies your level, goal type, depth, and domain, then folds it into generation.
 
 ## Quick Start
@@ -23,7 +22,7 @@ Open `http://localhost:3000`, type a learning goal, and generate your guide.
 
 1. **Describe your goal** — tell Compass what you want to learn and where you're starting.
 2. **Get your guide** — Compass writes a personalized, ordered study plan (phases, topics, labeled resources).
-3. **Learn in order** — check off phases, track your progress, and open it as a map anytime.
+3. **Learn in order** — check off phases, track your progress, and build clarity step by step.
 
 ## Pages
 
@@ -31,7 +30,6 @@ Open `http://localhost:3000`, type a learning goal, and generate your guide.
 |-------|---------|
 | `/` | Landing — single input, warm editorial aesthetic |
 | `/guide` | Study guide (text) — the primary experience |
-| `/map` | Interactive learning map (React Flow graph) |
 | `/why` | Why Compass (feature overview) |
 | `/how` | How it works |
 
@@ -84,22 +82,18 @@ When `TYPESAFE_API_KEY` is set alongside `PROVIDER=openrouter`, Jev classifies e
 app/
   page.tsx                 # Landing page
   guide/page.tsx           # Study guide (text) view
-  map/page.tsx             # Map view (reads search params)
   why/page.tsx             # Why Compass
   how/page.tsx             # How it works
   api/guide/route.ts       # POST endpoint — generates guides
-  api/map/route.ts         # POST endpoint — generates maps
 src/
   domain/guide/            # StudyGuide type + Zod schema
-  domain/map/              # LearningMap, MapNode, enums, Zod schemas
   application/guide/       # Goal profiling (Jev classification)
-  application/map/         # GenerateMapService, templates, scaffold, Jev routing
-  providers/               # DecisionProvider (Jev) + GuideGenerator/MapGenerator (OpenRouter)
+  providers/               # DecisionProvider (Jev) + GuideGenerator (OpenRouter)
     mock/                  # Deterministic keyword + scaffold
     jev/                   # TypeSafe AI judgments
     openrouter/            # Generative LLM via OpenRouter API
   infrastructure/          # Config loader
-  ui/                      # React components (landing, guide, map, drawer)
+  ui/                      # React components (landing, guide)
 tests/                     # Vitest unit tests
 ```
 
@@ -112,29 +106,6 @@ A study guide is a validated, structured JSON object:
 ```
 
 Each phase has a `title`, `duration`, and markdown `body` with labeled activity types: `[Course]`, `[Reading]`, `[Exercise]`, `[Case Study]`, `[Certification]`. Progress is persisted in `localStorage` under `compass:guide-done:<goal>`, and recent guides are stored in `compass:guide-history`.
-
-## Node Types
-
-Every node in a learning map has a `type` that describes what it represents:
-
-| Type | Purpose |
-|------|---------|
-| `goal` | The root — the overall learning objective |
-| `area` | A broad domain of study (e.g. Mathematics, Programming) |
-| `topic` | A unit of knowledge within an area |
-| `subtopic` | A subdivision of a topic |
-| `skill` | A concrete capability to acquire |
-| `concept` | An individual idea or principle |
-| `tool` | A software/tool to learn and use |
-| `project` | A hands-on build that applies the material |
-| `milestone` | A checkpoint along the path |
-| `course` | A formal, structured course to complete |
-| `reading` | A specific book, paper, or text to study |
-| `exercise` | Hands-on drills or practice problems |
-| `case-study` | A real-world example to analyze |
-| `certification` | An exam or credential worth earning |
-
-Node types are defined once in `src/domain/map/enums.ts` (`MAP_NODE_TYPES`); validation (Zod), rendering, and colors all derive from that list. To add a type, add the string there plus a color in `src/ui/map/graph.ts` (`NODE_TYPE_COLORS`).
 
 ## Commands
 
@@ -149,7 +120,7 @@ pnpm typecheck    # Type-check without emitting
 ## Tech Stack
 
 - **Next.js 16** (App Router, Turbopack)
-- **React 19** + **@xyflow/react 12** (interactive graph)
+- **React 19**
 - **Zod** (request/response validation)
 - **react-markdown + remark-gfm + rehype-sanitize** (guide rendering)
 - **Instrument Serif + Inter** (editorial typography)
@@ -164,7 +135,7 @@ See `.env.example` for the full list. Key variables:
 |----------|----------|---------|-------------|
 | `PROVIDER` | No | `mock` | `mock`, `jev`, or `openrouter` |
 | `OPENROUTER_API_KEY` | If `openrouter` | — | OpenRouter API key |
-| `OPENROUTER_MODEL` | No | `google/gemini-3.8-flash` | Model to use |
+| `OPENROUTER_MODEL` | No | `google/gemini-3.8-flash` | Default model (used as fallback for guide model) |
 | `OPENROUTER_GUIDE_MODEL` | No | `OPENROUTER_MODEL` fallback | Model for study guides |
 | `TYPESAFE_API_KEY` | No | — | TypeSafe AI key; enables goal profiling alongside OpenRouter |
 | `TYPESAFE_MODEL` | No | `jev-latest` | TypeSafe AI model |

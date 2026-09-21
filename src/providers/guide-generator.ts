@@ -1,7 +1,6 @@
 /**
- * The seam for generative study-guide providers. Like `MapGenerator`, this
- * produces a full output from a single goal — but as a structured `StudyGuide`
- * rather than a `LearningMap`.
+ * The seam for generative study-guide providers. Produces an entire
+ * `StudyGuide` from a goal string.
  */
 import type { StudyGuide } from "../domain/guide/schemas";
 import type { GoalProfile } from "../application/guide/goal-profile";

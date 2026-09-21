@@ -26,7 +26,6 @@ export function WarmShell({
           <Link href="/why" className={active === "why" ? "is-active" : ""}>Why Compass</Link>
           <Link href="/how" className={active === "how" ? "is-active" : ""}>How it works</Link>
         </nav>
-        <a href="/guide" className="lw-login">Log In</a>
       </header>
 
       {children}

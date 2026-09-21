@@ -1,5 +1,5 @@
 import type { DecisionProvider } from "../../providers/decision-provider";
-import { MAP_TEMPLATES, type MapTemplate } from "../map/map-templates";
+import { DOMAINS, type Domain } from "./domains";
 
 export type ProfileLevel = "beginner" | "intermediate" | "advanced";
 export type ProfileKind =
@@ -37,30 +37,30 @@ function keywordMatches(text: string, keyword: string): boolean {
   return new RegExp(`\\b${escaped}\\b`).test(text);
 }
 
-function templateCriteria(templates: MapTemplate[]): Record<string, string> {
+function domainCriteria(domains: Domain[]): Record<string, string> {
   const criteria: Record<string, string> = {};
-  for (const template of templates) {
-    criteria[template.id] = template.root.title;
+  for (const domain of domains) {
+    criteria[domain.id] = domain.title;
   }
   criteria[OTHER] = "None of the above";
   return criteria;
 }
 
-function fallbackDomain(goal: string, templates: MapTemplate[]): string {
+function fallbackDomain(goal: string, domains: Domain[]): string {
   const lower = goal.toLowerCase();
-  let best: MapTemplate | null = null;
+  let best: Domain | null = null;
   let bestScore = 0;
-  for (const template of templates) {
-    const score = template.keywords.reduce(
+  for (const domain of domains) {
+    const score = domain.keywords.reduce(
       (total, keyword) => total + (keywordMatches(lower, keyword) ? 1 : 0),
       0,
     );
     if (score > bestScore) {
-      best = template;
+      best = domain;
       bestScore = score;
     }
   }
-  return bestScore > 0 ? (best as MapTemplate).root.title : "";
+  return bestScore > 0 ? (best as Domain).title : "";
 }
 
 function isLevel(value: string): value is ProfileLevel {
@@ -80,7 +80,7 @@ export function fallbackProfile(goal: string): GoalProfile {
     level: "intermediate",
     kind: "career",
     depth: "balanced",
-    domain: fallbackDomain(goal, MAP_TEMPLATES),
+    domain: fallbackDomain(goal, DOMAINS),
     handsOn: "moderate",
     hasTimeline: false,
     source: "fallback",
@@ -142,7 +142,7 @@ export async function profileGoal(
         type: "choice",
         instructions:
           "Which learning domain does this goal belong to? Choose the closest match, or `other` if none fit.",
-        criteria: templateCriteria(MAP_TEMPLATES),
+        criteria: domainCriteria(DOMAINS),
       },
       {
         id: "handsOn",
@@ -187,16 +187,16 @@ export async function profileGoal(
         ? depthAnswer.choice
         : "balanced";
 
-    let domain = fallbackDomain(goal, MAP_TEMPLATES);
+    let domain = fallbackDomain(goal, DOMAINS);
     if (
       domainAnswer?.type === "choice" &&
       domainAnswer.choice !== OTHER &&
       domainAnswer.choice
     ) {
-      const match = MAP_TEMPLATES.find(
-        (template) => template.id === domainAnswer.choice,
+      const match = DOMAINS.find(
+        (domain) => domain.id === domainAnswer.choice,
       );
-      if (match) domain = match.root.title;
+      if (match) domain = match.title;
     }
 
     let handsOn: ProfileHandsOn = "moderate";

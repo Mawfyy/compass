@@ -33,3 +33,8 @@ export function findHistoryByGoal(goal: string): HistoryEntry | undefined {
   if (!target) return undefined;
   return loadHistory().find((e) => e.goal.trim().toLowerCase() === target);
 }
+
+export function deleteHistoryEntry(createdAt: number): void {
+  const entries = loadHistory().filter((e) => e.createdAt !== createdAt);
+  saveHistory(entries);
+}

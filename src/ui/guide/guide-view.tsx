@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Markdown } from "./markdown";
 import { serializeGuide, slugify } from "./serialize";
 import {
   loadHistory,
   saveHistory,
+  deleteHistoryEntry,
   HISTORY_LIMIT,
   type HistoryEntry,
 } from "./history";
@@ -15,12 +15,32 @@ import type { StudyGuide } from "@/domain/guide/schemas";
 
 const DONE_KEY = "compass:guide-done:";
 
+function GuideSkeleton() {
+  return (
+    <div className="guide-skeleton">
+      <div className="skel-line skel-w80" />
+      <div className="skel-line skel-w60" />
+      <div className="skel-spacer" />
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div className="skel-row" key={i}>
+          <div className="skel-circle" />
+          <div className="skel-line skel-flex" />
+          <div className="skel-line skel-w20" />
+        </div>
+      ))}
+      <div className="skel-spacer" />
+      <div className="skel-line skel-w40" />
+      <div className="skel-line skel-w70" />
+      <div className="skel-line skel-w50" />
+    </div>
+  );
+}
+
 function doneKey(goal: string): string {
   return DONE_KEY + encodeURIComponent(goal);
 }
 
 export function GuideView({ initialGoal = "" }: { initialGoal?: string }) {
-  const router = useRouter();
   const [goal, setGoal] = useState(initialGoal);
   const [guide, setGuide] = useState<StudyGuide | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,6 +49,7 @@ export function GuideView({ initialGoal = "" }: { initialGoal?: string }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [copied, setCopied] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const entries = loadHistory();
@@ -98,6 +119,7 @@ export function GuideView({ initialGoal = "" }: { initialGoal?: string }) {
     setError(null);
     setGuide(null);
     setDone(new Set());
+    setSidebarOpen(false);
     try {
       const res = await fetch("/api/guide", {
         method: "POST",
@@ -124,6 +146,7 @@ export function GuideView({ initialGoal = "" }: { initialGoal?: string }) {
     setGoal(entry.goal);
     setGuide(entry.guide);
     setError(null);
+    setSidebarOpen(false);
   };
 
   const copyGuide = async () => {
@@ -150,146 +173,202 @@ export function GuideView({ initialGoal = "" }: { initialGoal?: string }) {
     URL.revokeObjectURL(url);
   };
 
-  const openAsMap = () => {
-    if (!goal.trim()) return;
-    const params = new URLSearchParams();
-    params.set("goal", goal.trim());
-    router.push(`/map?${params.toString()}`);
-  };
-
   const clearHistory = () => {
     setHistory([]);
     saveHistory([]);
+  };
+
+  const deleteEntry = (createdAt: number) => {
+    deleteHistoryEntry(createdAt);
+    setHistory(loadHistory());
+  };
+
+  const newGuide = () => {
+    setGoal("");
+    setGuide(null);
+    setError(null);
+    setDone(new Set());
+    setOpen(new Set());
+    setSidebarOpen(false);
   };
 
   const completedCount = guide ? guide.phases.filter((p) => done.has(p.id)).length : 0;
 
   return (
     <div className="guide-shell">
-      <div className="guide-inner">
-      <header className="guide-header">
-        <Link href="/" className="back-link">← Back</Link>
-        <div>
-          <h1>Study Guide</h1>
-          <p className="guide-subtitle">
-            Ask for a written guide and get a clear, ordered plan — in plain text.
-          </p>
-        </div>
-      </header>
-
-      <form className="guide-form" onSubmit={submit}>
-        <textarea
-          name="goal"
-          value={goal}
-          onChange={(event) => setGoal(event.target.value)}
-          placeholder={'e.g. "guide to become an ML engineer"'}
-          autoFocus
-        />
-        <button type="submit" className="primary-btn" disabled={loading}>
-          {loading ? "Writing your guide…" : "Generate guide"}
-          {!loading && <span className="btn-arrow">→</span>}
-        </button>
-      </form>
-
-      {error && <div className="guide-error">{error}</div>}
-
-      {!guide && !loading && history.length > 0 && (
-        <div className="guide-history">
-          <div className="history-head">
-            <span>Recent guides</span>
-            <button type="button" className="history-clear" onClick={clearHistory}>
-              Clear
-            </button>
-          </div>
-          <ul>
-            {history.map((entry) => (
-              <li key={entry.createdAt}>
-                <button type="button" onClick={() => openHistory(entry)}>
-                  {entry.goal}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {guide && (
-        <div className="guide-result">
-          <div className="guide-actions">
-            <div className="guide-progress">
-              <span>
-                {completedCount}/{guide.phases.length} phases complete
-              </span>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${(completedCount / guide.phases.length) * 100}%` }}
-                />
+      <aside className={`guide-sidebar ${sidebarOpen ? "open" : ""}`}>
+        <div className="sidebar-head">
+          <span>Guides</span>
+          {history.length > 0 && (
+            <button type="button" className="sidebar-clear" onClick={clearHistory}>
+              Clear all
+            </button>
+          )}
+        </div>
+        <button type="button" className="sidebar-new" onClick={newGuide}>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 3v10" />
+            <path d="M3 8h10" />
+          </svg>
+          New guide
+        </button>
+        <ul className="sidebar-list">
+          {history.map((entry) => (
+            <li
+              key={entry.createdAt}
+              className={entry.goal.trim().toLowerCase() === goal.trim().toLowerCase() ? "active" : ""}
+            >
+              <button type="button" className="sidebar-item" onClick={() => openHistory(entry)}>
+                {entry.goal}
+              </button>
+              <button
+                type="button"
+                className="sidebar-delete"
+                onClick={(e) => { e.stopPropagation(); deleteEntry(entry.createdAt); }}
+                aria-label={`Delete ${entry.goal}`}
+              >
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 4h10" />
+                  <path d="M6 4V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1" />
+                  <path d="M4.5 4l.5 9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1l.5-9" />
+                </svg>
+              </button>
+            </li>
+          ))}
+          {history.length === 0 && (
+            <li className="sidebar-empty">No guides yet</li>
+          )}
+        </ul>
+      </aside>
+
+      <div className="guide-main">
+        <div className="guide-inner">
+        <header className="guide-header">
+          <Link href="/" className="back-link">← Back</Link>
+          <div>
+            <h1>Study Guide</h1>
+            <p className="guide-subtitle">
+              Ask for a written guide and get a clear, personalized plan.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            aria-label="Toggle guides sidebar"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18" />
+              <path d="M3 12h18" />
+              <path d="M3 18h18" />
+            </svg>
+          </button>
+        </header>
+
+        {error && <div className="guide-error">{error}</div>}
+
+        {!guide && !loading && (
+          <div className="guide-empty">
+            <p>Generate a guide to get started.</p>
+          </div>
+        )}
+
+        {loading && !guide && <GuideSkeleton />}
+
+        {guide && (
+          <div className="guide-result">
+            <div className="guide-actions">
+              <div className="guide-progress">
+                <span>
+                  {completedCount}/{guide.phases.length} phases complete
+                </span>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${(completedCount / guide.phases.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+              <div className="guide-action-buttons">
+                <button type="button" className="action-btn" onClick={copyGuide}>
+                  {copied ? "Copied" : "Copy"}
+                </button>
+                <button type="button" className="action-btn" onClick={downloadGuide}>
+                  Download
+                </button>
               </div>
             </div>
-            <div className="guide-action-buttons">
-              <button type="button" className="action-btn" onClick={copyGuide}>
-                {copied ? "Copied" : "Copy"}
-              </button>
-              <button type="button" className="action-btn" onClick={downloadGuide}>
-                Download
-              </button>
-              <button type="button" className="action-btn action-btn-primary" onClick={openAsMap}>
-                Open as map
-              </button>
+
+            <div className="guide-intro">
+              <Markdown>{guide.intro}</Markdown>
             </div>
-          </div>
 
-          <div className="guide-intro">
-            <Markdown>{guide.intro}</Markdown>
-          </div>
+            {guide.prerequisites && (
+              <div className="guide-prereq">
+                <span className="prereq-label">Prerequisites</span>
+                <Markdown>{guide.prerequisites}</Markdown>
+              </div>
+            )}
 
-          {guide.prerequisites && (
-            <div className="guide-prereq">
-              <span className="prereq-label">Prerequisites</span>
-              <Markdown>{guide.prerequisites}</Markdown>
-            </div>
-          )}
-
-          <ol className="guide-phases">
-            {guide.phases.map((phase) => {
-              const isOpen = open.has(phase.id);
-              return (
-                <li key={phase.id} className={`phase ${done.has(phase.id) ? "phase-done" : ""}`}>
-                  <div className="phase-head">
-                    <button
-                      type="button"
-                      className={`phase-check ${done.has(phase.id) ? "checked" : ""}`}
-                      onClick={() => toggleDone(phase.id)}
-                      aria-pressed={done.has(phase.id)}
-                      aria-label={`Mark ${phase.title} complete`}
-                    >
-                      {done.has(phase.id) ? "✓" : ""}
-                    </button>
-                    <button type="button" className="phase-title" onClick={() => toggleOpen(phase.id)}>
-                      {phase.title}
-                    </button>
-                    {phase.duration && <span className="phase-duration">{phase.duration}</span>}
-                    <button type="button" className="phase-chevron" onClick={() => toggleOpen(phase.id)}>
-                      {isOpen ? "−" : "+"}
-                    </button>
-                  </div>
-                  {isOpen && (
-                    <div className="phase-body">
-                      <Markdown>{phase.body}</Markdown>
+            <ol className="guide-phases">
+              {guide.phases.map((phase) => {
+                const isOpen = open.has(phase.id);
+                return (
+                  <li key={phase.id} className={`phase ${done.has(phase.id) ? "phase-done" : ""}`}>
+                    <div className="phase-head">
+                      <button
+                        type="button"
+                        className={`phase-check ${done.has(phase.id) ? "checked" : ""}`}
+                        onClick={() => toggleDone(phase.id)}
+                        aria-pressed={done.has(phase.id)}
+                        aria-label={`Mark ${phase.title} complete`}
+                      >
+                        {done.has(phase.id) ? "✓" : ""}
+                      </button>
+                      <button type="button" className="phase-title" onClick={() => toggleOpen(phase.id)}>
+                        {phase.title}
+                      </button>
+                      {phase.duration && <span className="phase-duration">{phase.duration}</span>}
+                      <button type="button" className="phase-chevron" onClick={() => toggleOpen(phase.id)}>
+                        {isOpen ? "−" : "+"}
+                      </button>
                     </div>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
+                    {isOpen && (
+                      <div className="phase-body">
+                        <Markdown>{phase.body}</Markdown>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
 
-          <div className="guide-milestones">
-            <h2>Suggested milestones</h2>
-            <Markdown>{guide.milestones}</Markdown>
+            <div className="guide-milestones">
+              <h2>Suggested milestones</h2>
+              <Markdown>{guide.milestones}</Markdown>
+            </div>
           </div>
+        )}
         </div>
-      )}
+
+        <div className="guide-form-bar">
+          <form className="guide-form" onSubmit={submit}>
+            <textarea
+              name="goal"
+              value={goal}
+              onChange={(event) => setGoal(event.target.value)}
+              placeholder={'e.g. "guide to become an ML engineer"'}
+            />
+            <button type="submit" className="primary-btn" disabled={loading}>
+              {loading ? "Writing your guide…" : "Generate guide"}
+              {!loading && <span className="btn-arrow">→</span>}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

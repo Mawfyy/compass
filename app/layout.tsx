@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Inter } from "next/font/google";
 import "./globals.css";
-import "@xyflow/react/dist/style.css";
 
 const serif = Instrument_Serif({
   weight: "400",
@@ -19,7 +18,7 @@ const sans = Inter({
 
 export const metadata: Metadata = {
   title: "Compass — Learning Guide Generator",
-  description: "Tell me what you want to learn, and I'll build a clear study guide — or a visual learning map.",
+  description: "Tell me what you want to learn, and I'll build a clear, personalized study guide.",
 };
 
 export default function RootLayout({

@@ -6,7 +6,6 @@ export interface Config {
   typesafeApiKey: string | null;
   typesafeModel: string;
   openrouterApiKey: string | null;
-  openrouterModel: string;
   openrouterBaseUrl: string;
   openrouterTimeoutMs: number;
   guideModel: string;
@@ -40,7 +39,6 @@ export function loadConfig(): Config {
     typesafeApiKey: process.env.TYPESAFE_API_KEY ?? null,
     typesafeModel: process.env.TYPESAFE_MODEL ?? "jev-latest",
     openrouterApiKey: process.env.OPENROUTER_API_KEY ?? null,
-    openrouterModel: process.env.OPENROUTER_MODEL ?? "google/gemini-3.8-flash",
     openrouterBaseUrl: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
     openrouterTimeoutMs: readInt(
       process.env.OPENROUTER_TIMEOUT_MS,

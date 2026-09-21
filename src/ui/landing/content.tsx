@@ -36,5 +36,5 @@ export const FEATURES = [
 export const STEPS = [
   { title: "Describe your goal", body: "Tell us what you want to learn and your current level." },
   { title: "Get your guide", body: "Compass writes a personalized, ordered study plan." },
-  { title: "Learn in order", body: "Follow the phases, track your progress, and explore it as a map." },
+  { title: "Learn in order", body: "Follow the phases, track your progress, and build clarity step by step." },
 ];

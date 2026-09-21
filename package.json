@@ -2,7 +2,7 @@
   "name": "compass",
   "version": "0.1.0",
   "private": true,
-  "description": "Compass — turn any learning goal into a personalized study guide or an interactive learning path.",
+  "description": "Compass — turn any learning goal into a personalized study guide.",
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -17,13 +17,15 @@
   },
   "dependencies": {
     "@typesafe-ai/sdk": "^0.6.0",
-    "@xyflow/react": "^12.11.6",
+    "katex": "^0.18.7",
     "next": "^16.3.5",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {

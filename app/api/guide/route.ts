@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { guideRequestSchema } from "@/domain/map/schemas";
+import { guideRequestSchema } from "@/domain/guide/schemas";
 import {
   createDecisionProvider,
   createGuideGenerator,
