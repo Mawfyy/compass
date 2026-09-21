@@ -30,13 +30,12 @@ Uses a generative LLM to produce a complete, specific learning map tailored to y
 ```env
 PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-...
-OPENROUTER_MODEL=deepseek/deepseek-v4-flash-0731  # default, ~$0.001/map
+OPENROUTER_MODEL=google/gemini-3.8-flash  # default, fast + structured outputs
 ```
 
 Other model options:
-- `meta-llama/llama-3.3-70b-instruct` — solid, $0.00032/map
-- `nvidia/nemotron-3-super-120b-a12b:free` — free but lower quality
-- `openrouter/auto` — router picks the best model (may be slow)
+- `deepseek/deepseek-v4-flash-0731` — slower, higher quality
+- `openai/gpt-4.1-nano` — very fast, good structured output
 
 ### Jev (TypeSafe AI)
 
@@ -85,6 +84,29 @@ tests/                     # Vitest unit tests
 4. Returns a `LearningMap` with a hierarchical node tree
 5. Frontend renders it as an interactive React Flow graph
 
+## Node Types
+
+Every node in a learning map has a `type` that describes what it represents:
+
+| Type | Purpose |
+|------|---------|
+| `goal` | The root — the overall learning objective |
+| `area` | A broad domain of study (e.g. Mathematics, Programming) |
+| `topic` | A unit of knowledge within an area |
+| `subtopic` | A subdivision of a topic |
+| `skill` | A concrete capability to acquire |
+| `concept` | An individual idea or principle |
+| `tool` | A software/tool to learn and use |
+| `project` | A hands-on build that applies the material |
+| `milestone` | A checkpoint along the path |
+| `course` | A formal, structured course to complete |
+| `reading` | A specific book, paper, or text to study |
+| `exercise` | Hands-on drills or practice problems |
+| `case-study` | A real-world example to analyze |
+| `certification` | An exam or credential worth earning |
+
+Node types are defined once in `src/domain/map/enums.ts` (`MAP_NODE_TYPES`); validation (Zod), rendering, and colors all derive from that list. To add a type, add the string there plus a color in `src/ui/map/graph.ts` (`NODE_TYPE_COLORS`).
+
 ## Commands
 
 ```bash
@@ -111,7 +133,7 @@ See `.env.example` for the full list. Key variables:
 |----------|----------|---------|-------------|
 | `PROVIDER` | No | `mock` | `mock`, `jev`, or `openrouter` |
 | `OPENROUTER_API_KEY` | If `openrouter` | — | OpenRouter API key |
-| `OPENROUTER_MODEL` | No | `deepseek/deepseek-v4-flash-0731` | Model to use |
+| `OPENROUTER_MODEL` | No | `google/gemini-3.8-flash` | Model to use |
 | `TYPESAFE_API_KEY` | If `jev` | — | TypeSafe AI API key |
 | `PROVIDER_TIMEOUT_MS` | No | `10000` | Timeout for Jev judgments (ms) |
-| `OPENROUTER_TIMEOUT_MS` | No | `120000` | Timeout for map generation (ms) |
+| `OPENROUTER_TIMEOUT_MS` | No | `60000` | Timeout for map generation (ms) |
