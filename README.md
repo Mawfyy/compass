@@ -1,4 +1,5 @@
 # Compass
+<img width="1854" height="966" alt="image" src="https://github.com/user-attachments/assets/ec45b5ce-0fc9-47ce-970d-537bab370548" />
 
 Turn any learning goal into a personalized **Study Guide**.
 
