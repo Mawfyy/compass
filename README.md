@@ -5,7 +5,9 @@ Turn any learning goal into a personalized **Study Guide**.
 Describe your destination, and Compass writes a clear, ordered plan with the right topics, resources, and projects at each step.
 
 - **Guide-first** — a written, structured study guide you can check off phase by phase.
-- **Personalized by default** — goal profiling classifies your level, goal type, depth, and domain, then folds it into generation.
+- **Ask follow-ups** — streaming chat about your generated guide: explain concepts, adjust pacing, suggest practice.
+- **Personalized by default** — the model classifies your level, goal type, depth, and domain, then folds it into generation.
+- **Light/dark theme** — toggle persists in `localStorage`.
 
 ## Quick Start
 
@@ -22,16 +24,25 @@ Open `http://localhost:3000`, click "Get started", and generate your guide.
 
 1. **Describe your goal** — tell Compass what you want to learn and where you're starting.
 2. **Get your guide** — Compass writes a personalized, ordered study plan (phases, topics, labeled resources).
-3. **Learn in order** — check off phases, track your progress, and build clarity step by step.
+3. **Learn in order** — check off phases, track your progress, and ask the chat follow-up questions as you go.
 
 ## Pages
 
 | Route | Purpose |
 |-------|---------|
 | `/` | Landing — hero + CTA |
-| `/guide` | Study guide with sidebar history |
+| `/guide` | Study guide with sidebar history + chat |
 | `/why` | Why Compass (feature overview) |
 | `/how` | How it works |
+
+## API
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/guide` | POST | Generates a study guide from `{ goal }` |
+| `/api/chat` | POST | Streams a chat reply (SSE) given `{ goal, guide, messages }` |
+
+`/api/chat` requires `PROVIDER=openrouter`; it returns `500` when no chat provider is configured (e.g. mock mode).
 
 ## Provider Modes
 
@@ -39,24 +50,31 @@ Set `PROVIDER` in `.env` to choose how guides are generated:
 
 | Mode | `PROVIDER` | What it does | Cost |
 |------|-----------|--------------|------|
-| **OpenRouter** | `openrouter` | Generates a full guide via an LLM (best quality) | ~$0.001/guide |
-| **Mock** | `mock` | Deterministic keyword matching + generic scaffold | Free |
+| **OpenRouter** | `openrouter` | Generates a full guide + enables streaming chat (best quality) | ~$0.001/guide |
+| **Mock** | `mock` | Deterministic generic scaffold; chat disabled | Free |
 
 ### OpenRouter (recommended)
 
-Uses a generative LLM to produce a complete, specific study guide tailored to your goal.
+Uses a generative LLM to produce a complete, specific study guide tailored to your goal, and powers the guide chat.
 
 ```env
 PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-...
-OPENROUTER_MODEL=google/gemini-3.8-flash  # default, fast + structured outputs
+OPENROUTER_GUIDE_MODEL=nvidia/nemotron-3-super-120b-a12b:free  # default
 ```
 
-The guide model is configurable via `OPENROUTER_GUIDE_MODEL` (defaults to `OPENROUTER_MODEL`).
+The model is configurable via `OPENROUTER_GUIDE_MODEL` (falls back to `OPENROUTER_MODEL`, then the default).
+
+Optional web search (used by both guide generation and chat):
+
+```env
+WEB_SEARCH=true
+WEB_SEARCH_MAX_RESULTS=5
+```
 
 ### Mock
 
-No API key needed. Matches your goal against keyword lists, falls back to a generic scaffold.
+No API key needed. Returns a fixed 3-phase scaffold with a note explaining how to enable real generation. Chat endpoints return `Chat provider not configured`.
 
 ```env
 PROVIDER=mock
@@ -70,14 +88,22 @@ app/
   guide/page.tsx           # Study guide view
   why/page.tsx             # Why Compass
   how/page.tsx             # How it works
-  api/guide/route.ts       # POST endpoint — generates guides
+  api/guide/route.ts       # POST — generates guides (mock fallback inline)
+  api/chat/route.ts        # POST — streams chat replies (SSE)
 src/
-  domain/guide/            # StudyGuide type + Zod schema
-  application/guide/       # Goal profiling + domain detection
+  domain/
+    guide/schemas.ts       # StudyGuide type + Zod schema (incl. optional profile)
+    chat/schemas.ts        # Chat request/message schemas
   providers/
-    openrouter/            # Generative LLM via OpenRouter API
-  infrastructure/          # Config loader
-  ui/                      # React components (landing, guide)
+    guide-generator.ts     # GuideGenerator interface
+    chat-client.ts         # ChatClient interface
+    provider-factory.ts    # Builds OpenRouter clients from config
+    openrouter/            # Generative LLM via OpenRouter API (guide + chat)
+  infrastructure/config.ts # Config loader (provider, models, web search)
+  ui/
+    guide/                 # GuideView, history, markdown, SSE stream parsing, serialize
+    landing/               # Landing shell + shared content
+    theme/                 # Light/dark theme toggle
 tests/                     # Vitest unit tests
 ```
 
@@ -86,10 +112,18 @@ tests/                     # Vitest unit tests
 A study guide is a validated, structured JSON object:
 
 ```
-{ intro, prerequisites?, phases, milestones }
+{ intro, prerequisites?, phases, milestones, profile? }
 ```
 
-Each phase has a `title`, `duration`, and markdown `body` with labeled activity types: `[Course]`, `[Reading]`, `[Exercise]`, `[Case Study]`, `[Certification]`. Progress is persisted in `localStorage` under `compass:guide-done:<goal>`, and recent guides are stored in `compass:guide-history`.
+Each phase has a `id`, `title`, `duration`, markdown `body`, and optional `resources` (kinds: `Course`, `Reading`, `Exercise`, `Project`, `Case Study`, `Certification`, `Tool`, `Docs`). The optional `profile` records the model's classification (`level`, `kind`, `depth`, `domain`, `handsOn`, `hasTimeline`).
+
+Client state in `localStorage`:
+
+| Key | Contents |
+|-----|----------|
+| `compass:guide-done:<goal>` | Completed phase IDs |
+| `compass:guide-history` | Recent guides (max 10) |
+| `compass:theme` | `light` or `dark` |
 
 ## Commands
 
@@ -99,6 +133,9 @@ pnpm build        # Production build
 pnpm test         # Run tests (vitest)
 pnpm test:watch   # Watch mode
 pnpm typecheck    # Type-check without emitting
+pnpm cf:build     # Build for Cloudflare Workers (OpenNext)
+pnpm cf:preview   # Build + wrangler dev
+pnpm deploy       # Build + deploy to Cloudflare
 ```
 
 ## Tech Stack
@@ -107,8 +144,22 @@ pnpm typecheck    # Type-check without emitting
 - **React 19**
 - **Zod** (request/response validation)
 - **react-markdown + remark-gfm + rehype-sanitize** (guide rendering)
+- **remark-math + rehype-katex + katex** (math rendering)
+- **OpenNext + Wrangler** (Cloudflare Workers deployment)
 - **Instrument Serif + Inter** (editorial typography)
 - **Vitest** (tests)
+
+## Deployment (Cloudflare Workers)
+
+The app deploys to Cloudflare Workers via [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare):
+
+- `open-next.config.ts` — OpenNext Cloudflare config
+- `wrangler.jsonc` — Worker config (`compass`), sets `PROVIDER=openrouter` and the guide model as Worker vars
+- `OPENROUTER_API_KEY` must be provided as a Worker secret (`wrangler secret put OPENROUTER_API_KEY`)
+
+```bash
+pnpm deploy
+```
 
 ## Environment Variables
 
@@ -118,7 +169,9 @@ See `.env.example` for the full list. Key variables:
 |----------|----------|---------|-------------|
 | `PROVIDER` | No | `mock` | `mock` or `openrouter` |
 | `OPENROUTER_API_KEY` | If `openrouter` | — | OpenRouter API key |
-| `OPENROUTER_MODEL` | No | `google/gemini-3.8-flash` | Default model (used as fallback for guide model) |
-| `OPENROUTER_GUIDE_MODEL` | No | `OPENROUTER_MODEL` fallback | Model for study guides |
+| `OPENROUTER_MODEL` | No | — | Default model (fallback for guide model) |
+| `OPENROUTER_GUIDE_MODEL` | No | `nvidia/nemotron-3-super-120b-a12b:free` | Model for study guides + chat |
 | `OPENROUTER_BASE_URL` | No | `https://openrouter.ai/api/v1` | OpenRouter endpoint |
-| `OPENROUTER_TIMEOUT_MS` | No | `60000` | Timeout for generation (ms) |
+| `OPENROUTER_TIMEOUT_MS` | No | `120000` | Timeout for guide generation (ms) |
+| `WEB_SEARCH` | No | `false` | Enable OpenRouter web-search plugin |
+| `WEB_SEARCH_MAX_RESULTS` | No | `5` | Max web-search results |
