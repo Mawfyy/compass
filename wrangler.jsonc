@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "compass",
+  "compatibility_date": "2026-09-21",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "compass"
+    }
+  ],
+  "vars": {
+    "PROVIDER": "openrouter",
+    "OPENROUTER_GUIDE_MODEL": "nvidia/nemotron-3-super-120b-a12b:free",
+    "WEB_SEARCH": "false"
+  }
+}

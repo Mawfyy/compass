@@ -7,6 +7,8 @@ export interface Config {
   openrouterBaseUrl: string;
   openrouterTimeoutMs: number;
   guideModel: string;
+  webSearch: boolean;
+  webSearchMaxResults: number;
 }
 
 function readInt(value: string | undefined, fallback: number, name: string): number {
@@ -25,12 +27,6 @@ function readProvider(value: string | undefined): ProviderName {
 }
 
 export function loadConfig(): Config {
-  try {
-    process.loadEnvFile();
-  } catch {
-    // .env is optional; values may come from the process environment.
-  }
-
   return {
     provider: readProvider(process.env.PROVIDER),
     providerTimeoutMs: readInt(process.env.PROVIDER_TIMEOUT_MS, 10_000, "PROVIDER_TIMEOUT_MS"),
@@ -41,6 +37,8 @@ export function loadConfig(): Config {
       120_000,
       "OPENROUTER_TIMEOUT_MS",
     ),
-    guideModel: process.env.OPENROUTER_GUIDE_MODEL ?? process.env.OPENROUTER_MODEL ?? "google/gemini-3.8-flash",
+    guideModel: process.env.OPENROUTER_GUIDE_MODEL ?? process.env.OPENROUTER_MODEL ?? "nvidia/nemotron-3-super-120b-a12b:free",
+    webSearch: process.env.WEB_SEARCH === "true",
+    webSearchMaxResults: readInt(process.env.WEB_SEARCH_MAX_RESULTS, 5, "WEB_SEARCH_MAX_RESULTS"),
   };
 }

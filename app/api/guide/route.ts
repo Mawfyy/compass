@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { guideRequestSchema } from "@/domain/guide/schemas";
 import { createGuideGenerator } from "@/providers/provider-factory";
 import type { StudyGuide } from "@/domain/guide/schemas";
-import { profileGoal } from "@/application/guide/goal-profile";
 
 function mockGuide(goal: string): StudyGuide {
   return {
@@ -13,19 +12,31 @@ function mockGuide(goal: string): StudyGuide {
         id: "phase-1",
         title: "Phase 1: Foundations",
         duration: "~2 weeks",
-        body: `- Identify the core concepts you need to understand first\n- [Reading] An introductory book or reference on the subject\n- [Course] A beginner-friendly structured course`,
+        body: `- Identify the core concepts you need to understand first\n- Learn the fundamentals before moving to practice`,
+        resources: [
+          { kind: "Reading", name: "An introductory book or reference on the subject" },
+          { kind: "Course", name: "A beginner-friendly structured course" },
+        ],
       },
       {
         id: "phase-2",
         title: "Phase 2: Hands-on practice",
         duration: "~3 weeks",
-        body: `- [Exercise] Complete guided drills to build muscle memory\n- [Exercise] Apply the ideas to a small project of your own`,
+        body: `- Complete guided drills to build muscle memory\n- Apply the ideas to a small project of your own`,
+        resources: [
+          { kind: "Exercise", name: "Guided drills and practice problems" },
+          { kind: "Exercise", name: "A small personal project" },
+        ],
       },
       {
         id: "phase-3",
         title: "Phase 3: Depth and specialization",
         duration: "~4 weeks",
-        body: `- [Case Study] Analyze a real-world example in depth\n- [Certification] Consider a credential to validate your skill`,
+        body: `- Analyze a real-world example in depth\n- Consider a credential to validate your skill`,
+        resources: [
+          { kind: "Case Study", name: "A real-world example in depth" },
+          { kind: "Certification", name: "A credential to validate your skill" },
+        ],
       },
     ],
     milestones:
@@ -55,8 +66,7 @@ export async function POST(request: Request) {
   try {
     const generator = createGuideGenerator();
     if (generator) {
-      const profile = profileGoal(parsed.data.goal);
-      const guide = await generator.generate(parsed.data.goal, profile);
+      const guide = await generator.generate(parsed.data.goal);
       return NextResponse.json({ guide });
     }
     return NextResponse.json({ guide: mockGuide(parsed.data.goal) });
